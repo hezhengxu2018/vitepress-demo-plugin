@@ -14,8 +14,6 @@ export interface UseNameSpaceReturn {
   bem: (_block?: string, element?: string, modifier?: string) => string;
 }
 
-const defaultPrefix = 'vitepress-demo-plugin';
-
 const generateName = (
   prefix: string,
   block?: string,
@@ -28,19 +26,24 @@ const generateName = (
   return defaultName;
 };
 
-export const useNameSpace = (block: string = ''): UseNameSpaceReturn => {
-  const b = () => generateName(defaultPrefix, block);
-  const e = (element: string = '') =>
-    generateName(defaultPrefix, block, element);
-  const m = (modifier: string = '') =>
-    generateName(defaultPrefix, block, '', modifier);
-  const bem = (_block?: string, element?: string, modifier?: string) =>
-    generateName(defaultPrefix, _block, element, modifier);
+const createUseNameSpace = (prefix: string) => {
+  return (block: string = ''): UseNameSpaceReturn => {
+    const b = () => generateName(prefix, block);
+    const e = (element: string = '') => generateName(prefix, block, element);
+    const m = (modifier: string = '') =>
+      generateName(prefix, block, '', modifier);
+    const bem = (_block?: string, element?: string, modifier?: string) =>
+      generateName(prefix, _block, element, modifier);
 
-  return {
-    b,
-    e,
-    m,
-    bem,
+    return {
+      b,
+      e,
+      m,
+      bem,
+    };
   };
 };
+
+export const createNameSpace = (prefix: string) =>
+  createUseNameSpace(prefix);
+

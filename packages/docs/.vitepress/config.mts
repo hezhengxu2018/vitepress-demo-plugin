@@ -159,6 +159,7 @@ export default defineConfig({
             },
           ],
         },
+        wrapperComponentName: 'VitepressEpDemoBox'
       });
     },
   },

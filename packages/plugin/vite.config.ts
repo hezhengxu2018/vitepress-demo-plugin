@@ -2,12 +2,20 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
+import { DEFAULT_NAMESPACE, EP_NAMESPACE } from './src/constant/style-prefix';
 
 export default defineConfig(() => {
   // 判断是否是 --watch 模式
   const isWatchMode = process.argv.includes('--watch');
 
   return {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: `$defaultPrefix: '${DEFAULT_NAMESPACE}'; $epPrefix: '${EP_NAMESPACE}';`,
+        },
+      },
+    },
     build: {
       lib: {
         entry: resolve(__dirname, './src/index.ts'),
