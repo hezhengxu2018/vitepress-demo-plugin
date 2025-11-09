@@ -4,9 +4,15 @@ import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { DEFAULT_NAMESPACE, EP_NAMESPACE } from './src/constant/style-prefix';
 
-export default defineConfig(() => {
-  // 判断是否是 --watch 模式
+export default defineConfig(({ mode }) => {
   const isWatchMode = process.argv.includes('--watch');
+  const isEpBuild = mode === 'theme-ep';
+  const libEntry = resolve(
+    __dirname,
+    isEpBuild ? './src/theme-ep.ts' : './src/index.ts'
+  );
+  const libName = isEpBuild ? 'demoBoxEp' : 'demoBox';
+  const fileName = isEpBuild ? 'theme-ep' : 'index';
 
   return {
     css: {
@@ -18,9 +24,10 @@ export default defineConfig(() => {
     },
     build: {
       lib: {
-        entry: resolve(__dirname, './src/index.ts'),
-        name: 'demoBox',
-        fileName: 'index',
+        entry: libEntry,
+        name: libName,
+        fileName,
+        formats: isEpBuild ? ['es'] : ['es', 'umd'],
       },
       rollupOptions: {
         external: [
@@ -41,9 +48,15 @@ export default defineConfig(() => {
             path: 'path',
             shiki: 'shiki',
           },
+          assetFileNames: (assetInfo) => {
+            if (assetInfo.name === 'style.css') {
+              return isEpBuild ? 'theme-ep.css' : 'style.css';
+            }
+            return 'assets/[name][extname]';
+          },
         },
       },
-      emptyOutDir: !isWatchMode,
+      emptyOutDir: !isWatchMode && !isEpBuild,
     },
     resolve: {
       alias: {

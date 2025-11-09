@@ -26,7 +26,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.umd.cjs"
     },
-    "./dist/style.css": "./dist/style.css"
+    "./theme-ep": {
+      "import": "./dist/theme-ep.js"
+    },
+    "./theme-ep/style.css": "./dist/theme-ep.css",
+    "./dist/style.css": "./dist/style.css",
+    "./dist/theme-ep.css": "./dist/theme-ep.css"
   },
   "main": "./dist/index.umd.cjs",
   "module": "./dist/index.js",
@@ -35,8 +40,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build",
+    "build": "pnpm run build:default && pnpm run build:theme-ep",
+    "build:default": "vite build",
+    "build:theme-ep": "vite build --mode theme-ep",
     "dev": "vite build --watch",
+    "dev:theme-ep": "vite build --mode theme-ep --watch",
     "release": "pnpm build && vr release --skip-changelog"
   },
   "devDependencies": {

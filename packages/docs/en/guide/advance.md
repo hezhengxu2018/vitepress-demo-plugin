@@ -405,3 +405,42 @@ export default {
 };
 
 ```
+
+### Built-in Element Plus Style Container
+
+The plugin ships with an Element Plus–style container. You'll need to install `element-plus` in your project—it isn't bundled and stays an optional peer dependency.
+
+Theme setup example:
+
+```ts
+import Theme from 'vitepress/theme';
+import { defineConfig } from 'vitepress';
+import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+import { VitepressEpDemoBox } from 'vitepress-demo-plugin/theme-ep';
+import 'vitepress-demo-plugin/theme-ep/style.css';
+
+export default {
+  ...Theme,
+  enhanceApp({ app }) {
+    app.component('vitepress-ep-demo-box', VitepressEpDemoBox);
+  },
+};
+```
+
+VitePress configuration reference:
+
+```ts
+import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+
+// ···
+
+export const config = defineConfig({
+  markdown: {
+    config(md) {
+      md.use(vitepressDemoPlugin, {
+        wrapperComponentName: 'vitepress-ep-demo-box',
+      });
+    },
+  },
+});
+```

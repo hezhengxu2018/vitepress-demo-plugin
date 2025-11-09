@@ -405,3 +405,43 @@ export default {
 };
 
 ```
+
+### 内置的 Element Plus 风格容器
+
+目前组件内置了element-plus风格的容器，使用时需要在项目中安装`element-plus`。目前没有将`element-plus`打包进产物中而是作为可选的peerDependencies。
+
+主题配置文件参考如下：
+
+```ts
+import Theme from 'vitepress/theme';
+import { defineConfig } from 'vitepress';
+import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+import { VitepressEpDemoBox } from 'vitepress-demo-plugin/theme-ep';
+import 'vitepress-demo-plugin/theme-ep/style.css';
+
+export default {
+  ...Theme,
+  enhanceApp({ app }) {
+    app.component('vitepress-ep-demo-box', VitepressEpDemoBox);
+  },
+};
+```
+
+Vitepress参考配置如下：
+
+```ts
+import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+
+// ···
+
+export const config = defineConfig({
+  markdown: {
+    config(md) {
+      md.use(vitepressDemoPlugin, {
+        wrapperComponentName: 'vitepress-ep-demo-box',
+      });
+    },
+  },
+});
+
+```
