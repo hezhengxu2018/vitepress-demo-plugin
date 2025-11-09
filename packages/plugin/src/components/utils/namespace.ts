@@ -1,3 +1,5 @@
+import { DEFAULT_NAMESPACE, EP_NAMESPACE } from "@/constant/style-prefix";
+
 /**
  * 钩子函数使用
  * const ns = useNameSpace();
@@ -6,7 +8,6 @@
  * ns.m(modifier) => block--modifier
  * ns.bem(element,modifier) => block__element--modifier
  */
-
 export interface UseNameSpaceReturn {
   b: () => string;
   e: (element: string) => string;
@@ -46,4 +47,8 @@ const createUseNameSpace = (prefix: string) => {
 
 export const createNameSpace = (prefix: string) =>
   createUseNameSpace(prefix);
+
+export const useEpNameSpace = createNameSpace(EP_NAMESPACE);
+
+export const useDefaultNameSpace = createNameSpace(DEFAULT_NAMESPACE);
 

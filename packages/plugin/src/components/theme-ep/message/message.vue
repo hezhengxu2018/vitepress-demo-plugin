@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import SuccessIcon from '../icons/success.vue';
-import { useNameSpace } from '../ep-namespace';
+import { useEpNameSpace } from '../../utils/namespace';
 
 const Duration = 3000;
 
-const ns = useNameSpace();
+const ns = useEpNameSpace();
 
 interface message {
   content: string;
@@ -92,4 +92,3 @@ defineExpose({
   opacity: 0;
 }
 </style>
-../utils/namespace

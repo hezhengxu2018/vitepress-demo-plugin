@@ -20,7 +20,7 @@ import GithubIcon from './icons/github.vue';
 import GitlabIcon from './icons/gitlab.vue';
 import { MessageService } from './message';
 import Tooltip from './tooltip/index.vue';
-import { useNameSpace } from './default-namespace';
+import { useDefaultNameSpace } from '../utils/namespace';
 import { useCodeFold } from '../utils/fold';
 import { useCodeCopy } from '../utils/copy';
 import { genHtmlCode } from '../utils/template';
@@ -129,7 +129,7 @@ const fileType = computed(() => {
   return type.value === 'react' ? 'tsx' : type.value;
 });
 
-const ns = useNameSpace();
+const ns = useDefaultNameSpace();
 const { isCodeFold, setCodeFold } = useCodeFold();
 const { clickCopy } = useCodeCopy();
 

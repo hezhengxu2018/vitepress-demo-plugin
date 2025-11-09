@@ -56,6 +56,12 @@
   "peerDependencies": {
     "shiki": "*",
     "vitepress": "*",
-    "vue": "^3.2.0"
+    "vue": "^3.2.0",
+    "element-plus": "^2.2.0"
+  },
+  "peerDependenciesMeta": {
+    "element-plus": {
+      "optional": true
+    }
   }
 }

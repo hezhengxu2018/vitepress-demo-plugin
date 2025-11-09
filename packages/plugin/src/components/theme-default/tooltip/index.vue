@@ -8,9 +8,9 @@
 </template>
 
 <script setup lang="ts">
-import { useNameSpace } from '../default-namespace';
+import { useDefaultNameSpace } from '../../utils/namespace';
 
-const ns = useNameSpace();
+const ns = useDefaultNameSpace();
 
 const props = defineProps<{
   content: string;

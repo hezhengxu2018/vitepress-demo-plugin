@@ -8,9 +8,9 @@
 </template>
 
 <script setup lang="ts">
-import { useNameSpace } from '../ep-namespace';
+import { useEpNameSpace } from '../../utils/namespace';
 
-const ns = useNameSpace();
+const ns = useEpNameSpace();
 
 const props = defineProps<{
   content: string;

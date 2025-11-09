@@ -6,9 +6,9 @@
 </template>
 
 <script setup lang="ts">
-import { useNameSpace } from './default-namespace';
+  import { useDefaultNameSpace } from '../utils/namespace';
 
-const ns = useNameSpace('placeholder');
+const ns = useDefaultNameSpace('placeholder');
 </script>
 
 <style scoped lang="scss">

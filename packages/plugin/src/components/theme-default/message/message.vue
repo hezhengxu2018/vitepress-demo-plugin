@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import SuccessIcon from '../icons/success.vue';
-import { useNameSpace } from '../default-namespace';
+import { useDefaultNameSpace } from '../../utils/namespace';
 
 const Duration = 3000;
 
-const ns = useNameSpace();
+const ns = useDefaultNameSpace();
 
 interface message {
   content: string;
