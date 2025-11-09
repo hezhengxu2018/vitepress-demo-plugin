@@ -32,6 +32,7 @@ export default defineConfig(() => {
           'react-dom',
           'sass',
           'shiki',
+          'element-plus',
         ],
         output: {
           globals: {

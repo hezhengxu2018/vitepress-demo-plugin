@@ -1,16 +1,5 @@
 <script lang="ts" setup>
 import {
-  ref,
-  inject,
-  watch,
-  nextTick,
-  computed,
-  Ref,
-  onUnmounted,
-  watchEffect,
-  onMounted,
-} from 'vue';
-import {
   CodeOpenIcon,
   CodeCloseIcon,
   CopyIcon,
@@ -23,40 +12,12 @@ import {
 import { MessageService } from './message';
 import Tooltip from './tooltip/index.vue';
 import { useDefaultNameSpace } from '../utils/namespace';
-import { useCodeFold } from '../utils/fold';
-import { useCodeCopy } from '../utils/copy';
-import { genHtmlCode } from '../utils/template';
+import {
+  useDemoBox,
+  type VitepressDemoBoxProps,
+} from '@/components/composables/useDemoBox';
 import { ComponentType } from '@/constant/type';
-import { Platform } from '@/markdown/preview';
-import { codeToHtml } from 'shiki';
-import { i18n, initI18nData, observeI18n, unobserveI18n } from '@/locales/i18n';
-
-interface VitepressDemoBoxProps {
-  title?: string;
-  description?: string;
-  reactComponent?: any;
-  vueCode?: string;
-  reactCode?: string;
-  htmlCode?: string;
-  order: string;
-  visible?: boolean;
-  select?: ComponentType;
-  github?: string;
-  gitlab?: string;
-  reactCreateElement?: any; // import { createElement as reactCreateElement } from 'react';
-  reactCreateRoot?: any; // import { createRoot as reactCreateRoot } from 'react-dom/client';
-  stackblitz?: string;
-  codesandbox?: string;
-  codeplayer?: string;
-  scope?: string;
-  files: string;
-  lightTheme?: string;
-  darkTheme?: string;
-  theme?: string;
-  locale?: string;
-  htmlWriteWay?: 'write' | 'srcdoc';
-  background?: string;
-}
+import { i18n } from '@/locales/i18n';
 
 const props = withDefaults(defineProps<VitepressDemoBoxProps>(), {
   title: '标题',
@@ -70,312 +31,32 @@ const props = withDefaults(defineProps<VitepressDemoBoxProps>(), {
 });
 
 const emit = defineEmits(['mount']);
-onMounted(() => {
-  emit('mount');
-  initI18n();
-  observeI18n();
-});
-onUnmounted(() => {
-  unobserveI18n();
-});
 
-function initI18n() {
-  if (props.locale) {
-    try {
-      initI18nData(JSON.parse(decodeURIComponent(props.locale)));
-    } catch (error) {
-      console.error(error);
-    }
-  }
-}
-
-const stackblitz = computed<Platform>(() => {
-  return JSON.parse(decodeURIComponent(props.stackblitz || '{}'));
-});
-const codesandbox = computed<Platform>(() => {
-  return JSON.parse(decodeURIComponent(props.codesandbox || '{}'));
-});
-const codeplayer = computed<Platform>(() => {
-  return JSON.parse(decodeURIComponent(props.codeplayer || '{}'));
-});
-
-const activeFile = ref<string>('');
-const currentFiles = computed<
-  Record<string, { code: string; filename: string }>
->(() => {
-  const files = JSON.parse(decodeURIComponent(props.files || '{}'));
-  const result = files[type.value];
-  if (result && !result[activeFile.value]) {
-    activeFile.value = Object.keys(result)?.[0] || '';
-  }
-  return result;
-});
-
-const tabOrders = computed(() => {
-  return props.order.split(',').map((item: string) => item.trim());
-});
-const injectType = inject('coot-code-type', {} as any);
-const setInjectType = inject<(type: string) => void>(
-  'set-coot-code-type',
-  (type: string) => {}
-);
-
-const type = ref<ComponentType>(ComponentType.VUE);
-function setCodeType(_type: ComponentType) {
-  type.value = _type;
-  if (typeof setInjectType === 'function') {
-    setInjectType(_type);
-  }
-}
-const fileType = computed(() => {
-  return type.value === 'react' ? 'tsx' : type.value;
+const {
+  stackblitz,
+  codesandbox,
+  type,
+  tabs,
+  isCodeFold,
+  setCodeFold,
+  setCodeType,
+  currentFiles,
+  activeFile,
+  currentCode,
+  displayCode,
+  openGithub,
+  openGitlab,
+  clickCodeCopy,
+  htmlContainerRef,
+  reactContainerRef,
+  handleFileClick,
+  sourceRef,
+  sourceContentRef,
+} = useDemoBox(props, emit, {
+  onCopySuccess: () => MessageService.open(i18n.value.copySuccess),
 });
 
 const ns = useDefaultNameSpace();
-const { isCodeFold, setCodeFold } = useCodeFold();
-const { clickCopy } = useCodeCopy();
-
-const currentCode = computed(() => {
-  if (currentFiles.value && currentFiles.value[activeFile.value]) {
-    return currentFiles.value[activeFile.value].code;
-  }
-  return props[`${type.value}Code` as keyof VitepressDemoBoxProps];
-});
-
-const displayCode = ref('');
-watchEffect(async () => {
-  await updatetDisplayCode();
-  updateCodeBlockHeight();
-});
-
-async function updatetDisplayCode() {
-  displayCode.value = await codeToHtml(currentCode.value || '', {
-    lang:
-      currentFiles.value[activeFile.value]?.filename.split('.').pop() ||
-      fileType.value,
-    themes: {
-      dark: props.darkTheme || 'github-dark',
-      light: props.lightTheme || 'github-light',
-    },
-  });
-}
-
-function updateCodeBlockHeight() {
-  setTimeout(() => {
-    // 重新计算代码块高度
-    if (sourceRef.value && !isCodeFold.value) {
-      sourceRef.value.style.height = sourceContentRef.value.scrollHeight + 'px';
-    }
-  });
-}
-
-const tabs = computed<ComponentType[]>(() => {
-  return [ComponentType.VUE, ComponentType.REACT, ComponentType.HTML]
-    .filter((item) => props[`${item}Code` as keyof VitepressDemoBoxProps])
-    .sort((a: string, b: string) => {
-      return tabOrders.value.indexOf(a) - tabOrders.value.indexOf(b);
-    });
-});
-
-watch(
-  () => (injectType as Ref<ComponentType>)?.value,
-  (val: ComponentType) => {
-    if (val && props[`${val}Code` as keyof VitepressDemoBoxProps]) {
-      type.value = val;
-    }
-  },
-  { immediate: true }
-);
-
-const openGithub = () => {
-  window.open(props.github, '_blank');
-};
-
-const openGitlab = () => {
-  window.open(props.gitlab, '_blank');
-};
-
-watch(
-  () => (type as any).value,
-  (val: any) => {
-    if (!val) {
-      return;
-    }
-
-    // 副作用
-    if (val === 'html') {
-      setHTMLWithScript();
-    } else if (val === 'react') {
-      renderReactComponent();
-    }
-  },
-  {
-    immediate: true,
-  }
-);
-
-const clickCodeCopy = () => {
-  clickCopy(currentCode.value || '');
-  MessageService.open(i18n.value.copySuccess);
-};
-
-const htmlContainerRef = ref();
-let observer: () => void;
-function setHTMLWithScript() {
-  nextTick(() => {
-    if (!htmlContainerRef.value || !props.htmlCode) {
-      return;
-    }
-    const iframe = htmlContainerRef.value.querySelector('iframe');
-    const styles = document.head.querySelectorAll('style');
-    const styleLinks = document.head.querySelectorAll('link[as="style"]');
-    const fontLinks = document.head.querySelectorAll('link[as="font"]');
-    const styleString = Array.from(styles)
-      .map((style) => `<style replace="true">${style.innerText}</style>`)
-      .join('\n');
-    const styleLinkString = Array.from(styleLinks)
-      .map((link) => link.outerHTML)
-      .join('\n');
-    const fontLinkString = Array.from(fontLinks)
-      .map((link) => link.outerHTML)
-      .join('\n');
-    let iframeDocument =
-      iframe.contentDocument || iframe.contentWindow.document;
-    // 优先使用 iframeDocument.write 写入内容；虽然浏览器不支持，但是不需要异步，交互很丝滑
-    if (
-      typeof iframeDocument.write === 'function' &&
-      props.htmlWriteWay === 'write'
-    ) {
-      iframeDocument.open();
-      iframeDocument.write(
-        genHtmlCode({
-          code: props.htmlCode || '',
-          styles: styleString,
-          links: styleLinkString + '\n' + fontLinkString,
-        })
-      );
-      iframeDocument.close();
-    } else {
-      iframe.srcdoc = genHtmlCode({
-        code: props.htmlCode || '',
-        styles: styleString,
-        links: styleLinkString + '\n' + fontLinkString,
-      });
-      iframe.onload = () => {
-        iframeDocument =
-          iframe.contentDocument || iframe.contentWindow.document;
-      };
-    }
-
-    // 监听 iframe 高度变化
-    const originObserver = (observer = function () {
-      requestAnimationFrame(() => {
-        const height = iframeDocument.documentElement.offsetHeight + 'px';
-        iframe.style.height = height;
-        if (htmlContainerRef.value) {
-          htmlContainerRef.value.style.height = height;
-        }
-        if (iframeDocument.documentElement) {
-          iframeDocument.documentElement.className =
-            document.documentElement.className;
-        }
-        if (originObserver === observer) {
-          observer();
-        }
-      });
-    });
-    observer();
-  });
-}
-
-const reactContainerRef = ref();
-let root: any = null;
-function renderReactComponent() {
-  nextTick(() => {
-    if (props.reactComponent && type.value === 'react' && props.reactCode) {
-      if (!root) {
-        root = props.reactCreateRoot(reactContainerRef.value);
-      }
-      root.render(props.reactCreateElement(props.reactComponent, {}, null));
-    }
-  });
-}
-onUnmounted(() => {
-  if (root) {
-    root.unmount();
-    root = null;
-  }
-});
-
-watch(
-  () => [reactContainerRef.value, props.reactComponent],
-  (val) => {
-    if (reactContainerRef.value) {
-      renderReactComponent();
-    } else if (root) {
-      root.unmount();
-      root = null;
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-watch(
-  () => props.reactCode,
-  (val, prevVal) => {
-    if (val && val !== prevVal && root) {
-      root.render(props.reactCreateElement(props.reactComponent, {}, null));
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-watch(
-  () => props.select,
-  (val: ComponentType) => {
-    if (val && props[`${val}Code` as keyof VitepressDemoBoxProps]) {
-      type.value = val;
-    }
-  },
-  {
-    immediate: true,
-  }
-);
-
-watch(
-  () => tabs.value,
-  () => {
-    if (!props[`${type.value}Code` as keyof VitepressDemoBoxProps]) {
-      type.value = tabs.value[0];
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-function handleFileClick(file: string) {
-  activeFile.value = file;
-  if (sourceRef.value) {
-    sourceRef.value.style.height = 'auto';
-  }
-}
-
-const sourceRef = ref();
-const sourceContentRef = ref();
-watch(
-  () => isCodeFold.value,
-  (val) => {
-    nextTick(async () => {
-      if (sourceRef.value) {
-        if (val) {
-          sourceRef.value.style.height = 0;
-        } else {
-          await updatetDisplayCode();
-          updateCodeBlockHeight();
-        }
-      }
-    });
-  }
-);
 </script>
 
 <template>
