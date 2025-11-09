@@ -10,16 +10,17 @@ import {
   watchEffect,
   onMounted,
 } from 'vue';
-import CodeOpenIcon from './icons/code-open.vue';
-import CodeCloseIcon from './icons/code-close.vue';
-import CopyIcon from './icons/copy.vue';
-import FoldIcon from './icons/fold.vue';
-import CodeSandboxIcon from './icons/codesandbox.vue';
-import StackblitzIcon from './icons/stackblitz.vue';
-import GithubIcon from './icons/github.vue';
-import GitlabIcon from './icons/gitlab.vue';
-import { MessageService } from './message';
-import Tooltip from './tooltip/index.vue';
+import {
+  CodeOpenIcon,
+  CodeCloseIcon,
+  CopyIcon,
+  FoldIcon,
+  CodeSandboxIcon,
+  StackblitzIcon,
+  GithubIcon,
+  GitlabIcon,
+} from './icons/index';
+import { ElTooltip, ElMessage, ElIcon } from 'element-plus';
 import { useEpNameSpace } from '../utils/namespace';
 import { useCodeFold } from '../utils/fold';
 import { useCodeCopy } from '../utils/copy';
@@ -214,7 +215,7 @@ watch(
 
 const clickCodeCopy = () => {
   clickCopy(currentCode.value || '');
-  MessageService.open(i18n.value.copySuccess);
+  ElMessage.success(i18n.value.copySuccess);
 };
 
 const htmlContainerRef = ref();
@@ -411,37 +412,51 @@ watch(
         </div>
       </div>
       <div :class="[ns.bem('description', 'handle-btn')]">
-        <Tooltip :content="i18n.openInStackblitz" v-if="stackblitz.show">
-          <StackblitzIcon
-            :code="currentCode"
-            :type="type"
-            :scope="scope || ''"
-            :templates="stackblitz.templates || []"
-          />
-        </Tooltip>
-        <Tooltip :content="i18n.openInCodeSandbox" v-if="codesandbox.show">
-          <CodeSandboxIcon
-            :code="currentCode"
-            :type="type"
-            :scope="scope || ''"
-            :templates="codesandbox.templates || []"
-          />
-        </Tooltip>
-        <Tooltip :content="i18n.openInGithub" v-if="github">
-          <GithubIcon @click="openGithub" />
-        </Tooltip>
-        <Tooltip :content="i18n.openInGitlab" v-if="gitlab">
-          <GitlabIcon @click="openGitlab" />
-        </Tooltip>
-        <Tooltip :content="i18n.copyCode">
-          <CopyIcon @click="clickCodeCopy" />
-        </Tooltip>
-        <Tooltip :content="i18n.collapseCode" v-if="!isCodeFold">
-          <CodeCloseIcon @click="setCodeFold(true)" />
-        </Tooltip>
-        <Tooltip :content="i18n.expandCode" v-else>
-          <CodeOpenIcon @click="setCodeFold(false)" />
-        </Tooltip>
+        <ElTooltip :content="i18n.openInStackblitz" v-if="stackblitz.show">
+          <ElIcon>
+            <StackblitzIcon
+              :code="currentCode"
+              :type="type"
+              :scope="scope || ''"
+              :templates="stackblitz.templates || []"
+            />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.openInCodeSandbox" v-if="codesandbox.show">
+          <ElIcon>
+            <CodeSandboxIcon
+              :code="currentCode"
+              :type="type"
+              :scope="scope || ''"
+              :templates="codesandbox.templates || []"
+            />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.openInGithub" v-if="github">
+          <ElIcon>
+            <GithubIcon @click="openGithub" />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.openInGitlab" v-if="gitlab">
+          <ElIcon>
+            <GitlabIcon @click="openGitlab" />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.copyCode">
+          <ElIcon>
+            <CopyIcon @click="clickCodeCopy" />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.collapseCode" v-if="!isCodeFold">
+          <ElIcon>
+            <CodeCloseIcon @click="setCodeFold(true)" />
+          </ElIcon>
+        </ElTooltip>
+        <ElTooltip :content="i18n.expandCode" v-else>
+          <ElIcon>
+            <CodeOpenIcon @click="setCodeFold(false)" />
+          </ElIcon>
+        </ElTooltip>
       </div>
     </section>
 
@@ -555,6 +570,7 @@ watch(
       column-gap: 16px;
       padding: 8px;
       color: var(--el-text-color-secondary, #909399);
+      font-size: 16px;
 
       svg {
         width: 16px;

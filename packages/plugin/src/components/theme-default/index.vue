@@ -10,14 +10,16 @@ import {
   watchEffect,
   onMounted,
 } from 'vue';
-import CodeOpenIcon from './icons/code-open.vue';
-import CodeCloseIcon from './icons/code-close.vue';
-import CopyIcon from './icons/copy.vue';
-import FoldIcon from './icons/fold.vue';
-import CodeSandboxIcon from './icons/codesandbox.vue';
-import StackblitzIcon from './icons/stackblitz.vue';
-import GithubIcon from './icons/github.vue';
-import GitlabIcon from './icons/gitlab.vue';
+import {
+  CodeOpenIcon,
+  CodeCloseIcon,
+  CopyIcon,
+  FoldIcon,
+  CodeSandboxIcon,
+  StackblitzIcon,
+  GithubIcon,
+  GitlabIcon,
+} from './icons/index';
 import { MessageService } from './message';
 import Tooltip from './tooltip/index.vue';
 import { useDefaultNameSpace } from '../utils/namespace';

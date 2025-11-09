@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import SuccessIcon from '../icons/success.vue';
+import { SuccessIcon } from '../icons/index';
 import { useDefaultNameSpace } from '../../utils/namespace';
 
 const Duration = 3000;
