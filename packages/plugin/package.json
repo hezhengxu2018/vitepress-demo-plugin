@@ -52,7 +52,6 @@
     "@types/markdown-it": "^12.2.3",
     "@types/node": "^20.4.2",
     "@types/pretty": "^2.0.3",
-    "@vueuse/core": "^10.4.1",
     "@vitejs/plugin-vue": "^3.0.3",
     "codesandbox": "^2.2.3",
     "pretty": "^2.0.0",

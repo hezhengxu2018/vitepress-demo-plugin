@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {
   CodeOpenIcon,
-  CodeCloseIcon,
   CopyIcon,
   FoldIcon,
   CodeSandboxIcon,
@@ -10,7 +9,6 @@ import {
   GitlabIcon,
 } from './icons/index';
 import { ElTooltip, ElIcon, ElMessage, ElRadioGroup, ElRadioButton, ElRadio, ElDivider, ElCollapseTransition } from 'element-plus';
-import { useToggle } from "@vueuse/core";
 import { useEpNameSpace } from '../utils/namespace';
 import {
   useDemoBox,
@@ -33,8 +31,6 @@ const props = withDefaults(defineProps<VitepressDemoBoxProps>(), {
 
 const emit = defineEmits(['mount']);
 
-const [sourceVisible, toggleSourceVisible] = useToggle()
-
 function onCopySuccess() {
   ElMessage.success(i18n.value.copySuccess);
 }
@@ -42,6 +38,8 @@ function onCopySuccess() {
 const {
   stackblitz,
   codesandbox,
+  isCodeFold,
+  setCodeFold,
   type,
   tabs,
   currentFiles,
@@ -131,7 +129,7 @@ const ns = useEpNameSpace();
         </ElTooltip>
         <ElTooltip :content="i18n.expandCode">
           <ElIcon :class="ns.bem('description', 'handle-btn')">
-            <CodeOpenIcon @click="toggleSourceVisible()" />
+            <CodeOpenIcon @click="setCodeFold(!isCodeFold)" />
           </ElIcon>
         </ElTooltip>
       </div>
@@ -139,7 +137,7 @@ const ns = useEpNameSpace();
     <!-- 代码展示区 -->
     <section :class="[ns.bem('source')]">
       <ElCollapseTransition>
-        <div v-show="sourceVisible">
+        <div v-show="isCodeFold">
           <div v-if="Object.keys(currentFiles).length" :class="[ns.bem('file-tabs')]">
             <ElRadioGroup v-model="activeFile">
               <ElRadioButton
@@ -158,11 +156,11 @@ const ns = useEpNameSpace();
 
       <Transition name="el-fade-in-linear">
         <div
-          v-show="sourceVisible"
+          v-show="isCodeFold"
           :class="[ns.bem('float-control')]"
           tabindex="0"
           role="button"
-          @click="toggleSourceVisible(false)"
+          @click="setCodeFold(false)"
         >
           <ElIcon :size="16">
             <FoldIcon />
