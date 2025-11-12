@@ -53,7 +53,10 @@ export interface TabConfig {
   select?: string;
 }
 
-export type Files = Record<string, { code: string; filename: string }>;
+export type Files = Record<
+  string,
+  { code: string; filename: string; html?: string }
+>;
 
 export type Platform = {
   show: boolean;
@@ -354,9 +357,60 @@ export const transformPreview = (
 
   // 多文件展示
   const files = {
-    vue: {} as Record<string, { code: string; filename: string }>,
-    react: {} as Record<string, { code: string; filename: string }>,
-    html: {} as Record<string, { code: string; filename: string }>,
+    vue: {} as Record<string, { code: string; filename: string; html?: string }>,
+    react: {} as Record<string, { code: string; filename: string; html?: string }>,
+    html: {} as Record<string, { code: string; filename: string; html?: string }>,
+  };
+
+  const highlightedCode: Record<'vue' | 'react' | 'html', string> = {
+    vue: '',
+    react: '',
+    html: '',
+  };
+
+  const fallbackLangMap: Record<'vue' | 'react' | 'html', string> = {
+    vue: 'vue',
+    react: 'tsx',
+    html: 'html',
+  };
+
+  const resolveLangByFile = (filePath: string, fallback: string) => {
+    const ext = path.extname(filePath || '').replace('.', '').toLowerCase();
+    if (!ext) return fallback;
+    const alias: Record<string, string> = {
+      htm: 'html',
+      mjs: 'js',
+      cjs: 'js',
+    };
+    return alias[ext] || ext || fallback;
+  };
+
+  const renderHighlightedCode = (code: string, lang: string) => {
+    if (!code) return '';
+    try {
+      const fencedCode = `\`\`\` ${lang}\n${code}\n\`\`\``;
+      return md.render(fencedCode);
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const collectHighlightedCode = (
+    type: 'vue' | 'react' | 'html',
+    absPath: string
+  ) => {
+    if (!absPath) return;
+    try {
+      if (fs.existsSync(absPath)) {
+        const source = fs.readFileSync(absPath, 'utf-8');
+        highlightedCode[type] = renderHighlightedCode(
+          source,
+          resolveLangByFile(absPath, fallbackLangMap[type])
+        );
+      }
+    } catch (error) {
+      highlightedCode[type] = '';
+    }
   };
 
   function formatString(value: string) {
@@ -406,6 +460,13 @@ export const transformPreview = (
             if (fs.existsSync(absPath)) {
               const code = fs.readFileSync(absPath, 'utf-8');
               files[key as keyof typeof files][file].code = code;
+              files[key as keyof typeof files][file].html = renderHighlightedCode(
+                code,
+                resolveLangByFile(
+                  filePath,
+                  fallbackLangMap[key as keyof typeof fallbackLangMap]
+                )
+              );
             } else {
               delete files[key as keyof typeof files][file];
             }
@@ -424,6 +485,20 @@ export const transformPreview = (
   if (config?.locale && typeof config.locale === 'object') {
     locale = encodeURIComponent(JSON.stringify(config.locale));
   }
+
+  if (componentVuePath) {
+    collectHighlightedCode('vue', componentVuePath);
+  }
+  if (componentReactPath) {
+    collectHighlightedCode('react', componentReactPath);
+  }
+  if (componentHtmlPath) {
+    collectHighlightedCode('html', componentHtmlPath);
+  }
+
+  const encodedCodeHighlights = encodeURIComponent(
+    JSON.stringify(highlightedCode)
+  );
 
   const sourceCode = `
   ${
@@ -447,6 +522,7 @@ export const transformPreview = (
       codesandbox="${encodeURIComponent(JSON.stringify(codesandbox))}"
       codeplayer="${encodeURIComponent(JSON.stringify(codeplayer))}"
       files="${encodeURIComponent(JSON.stringify(files))}"
+      codeHighlights="${encodedCodeHighlights}"
       scope="${scopeValue || ''}"
       htmlWriteWay="${htmlWriteWayValue}"
       background="${backgroundValue}"

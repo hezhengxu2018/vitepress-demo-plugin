@@ -9,7 +9,8 @@ import {
   GithubIcon,
   GitlabIcon,
 } from './icons/index';
-import { ElTooltip, ElIcon, ElMessage } from 'element-plus';
+import { ElTooltip, ElIcon, ElMessage, ElRadioGroup, ElRadioButton, ElRadio, ElDivider, ElCollapseTransition } from 'element-plus';
+import { useToggle } from "@vueuse/core";
 import { useEpNameSpace } from '../utils/namespace';
 import {
   useDemoBox,
@@ -27,9 +28,12 @@ const props = withDefaults(defineProps<VitepressDemoBoxProps>(), {
   github: '',
   gitlab: '',
   htmlWriteWay: 'write',
+  codeHighlights: ''
 });
 
 const emit = defineEmits(['mount']);
+
+const [sourceVisible, toggleSourceVisible] = useToggle()
 
 function onCopySuccess() {
   ElMessage.success(i18n.value.copySuccess);
@@ -40,9 +44,6 @@ const {
   codesandbox,
   type,
   tabs,
-  isCodeFold,
-  setCodeFold,
-  setCodeType,
   currentFiles,
   activeFile,
   currentCode,
@@ -52,9 +53,6 @@ const {
   clickCodeCopy,
   htmlContainerRef,
   reactContainerRef,
-  handleFileClick,
-  sourceRef,
-  sourceContentRef,
 } = useDemoBox(props, emit, {
   onCopySuccess,
 });
@@ -74,9 +72,7 @@ const ns = useEpNameSpace();
     </section>
     <!-- 描述及切换 -->
     <section :class="[ns.bem('description')]">
-      <div v-if="title" :class="[ns.bem('description', 'title')]">
-        <div style="flex-shrink: 0">{{ title }}</div>
-      </div>
+      <ElDivider  v-if="title" :class="[ns.bem('description', 'title')]" content-position="left">{{ title }}</ElDivider>
       <div
         v-if="description"
         :class="[ns.bem('description', 'content')]"
@@ -87,18 +83,19 @@ const ns = useEpNameSpace();
         :class="[ns.bem('description', 'split-line')]"
       ></div>
       <div :class="[ns.bem('lang-tabs')]" v-if="tabs.length > 1 && visible">
-        <div
-          v-for="tab in tabs"
-          :key="tab"
-          :class="[ns.bem('tab'), type === tab && ns.bem('active-tab')]"
-          @click="setCodeType?.(tab)"
-        >
-          {{ tab }}
-        </div>
+        <ElRadioGroup v-model="type">
+          <ElRadio
+            v-for="tab in tabs"
+            :key="tab"
+            :value="tab"
+          >
+            {{ tab }}
+          </ElRadio>
+        </ElRadioGroup>
       </div>
-      <div :class="[ns.bem('description', 'handle-btn')]">
+      <div :class="[ns.bem('description', 'handle-btn-op-bar')]">
         <ElTooltip :content="i18n.openInStackblitz" v-if="stackblitz.show">
-          <ElIcon>
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
             <StackblitzIcon
               :code="currentCode"
               :type="type"
@@ -108,7 +105,7 @@ const ns = useEpNameSpace();
           </ElIcon>
         </ElTooltip>
         <ElTooltip :content="i18n.openInCodeSandbox" v-if="codesandbox.show">
-          <ElIcon>
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
             <CodeSandboxIcon
               :code="currentCode"
               :type="type"
@@ -118,228 +115,183 @@ const ns = useEpNameSpace();
           </ElIcon>
         </ElTooltip>
         <ElTooltip :content="i18n.openInGithub" v-if="github">
-          <ElIcon>
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
             <GithubIcon @click="openGithub" />
           </ElIcon>
         </ElTooltip>
         <ElTooltip :content="i18n.openInGitlab" v-if="gitlab">
-          <ElIcon>
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
             <GitlabIcon @click="openGitlab" />
           </ElIcon>
         </ElTooltip>
         <ElTooltip :content="i18n.copyCode">
-          <ElIcon>
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
             <CopyIcon @click="clickCodeCopy" />
           </ElIcon>
         </ElTooltip>
-        <ElTooltip :content="i18n.collapseCode" v-if="!isCodeFold">
-          <ElIcon>
-            <CodeCloseIcon @click="setCodeFold(true)" />
-          </ElIcon>
-        </ElTooltip>
-        <ElTooltip :content="i18n.expandCode" v-else>
-          <ElIcon>
-            <CodeOpenIcon @click="setCodeFold(false)" />
+        <ElTooltip :content="i18n.expandCode">
+          <ElIcon :class="ns.bem('description', 'handle-btn')">
+            <CodeOpenIcon @click="toggleSourceVisible()" />
           </ElIcon>
         </ElTooltip>
       </div>
     </section>
-
     <!-- 代码展示区 -->
-    <section :class="[ns.bem('source')]" ref="sourceRef">
-      <div ref="sourceContentRef">
-        <div
-          :class="[ns.bem('file-tabs')]"
-          v-if="Object.keys(currentFiles).length"
-        >
-          <div
-            v-for="file in Object.keys(currentFiles)"
-            :key="file"
-            :class="[
-              ns.bem('tab'),
-              activeFile === file && ns.bem('active-tab'),
-            ]"
-            @click="handleFileClick(file)"
-          >
-            {{ file }}
+    <section :class="[ns.bem('source')]">
+      <ElCollapseTransition>
+        <div v-show="sourceVisible">
+          <div v-if="Object.keys(currentFiles).length" :class="[ns.bem('file-tabs')]">
+            <ElRadioGroup v-model="activeFile">
+              <ElRadioButton
+                v-for="file in Object.keys(currentFiles)"
+                size="small"
+                :key="file"
+                :value="file"
+              >
+                {{ file }}
+              </ElRadioButton>
+            </ElRadioGroup>
           </div>
+          <div v-html="displayCode"></div>
         </div>
-        <pre class="language-html"><div v-html="displayCode"></div></pre>
-      </div>
-    </section>
+      </ElCollapseTransition>
 
-    <div :class="ns.bem('fold')" v-if="!isCodeFold" @click="setCodeFold(true)">
-      <FoldIcon />{{ i18n.collapseCode }}
-    </div>
+      <Transition name="el-fade-in-linear">
+        <div
+          v-show="sourceVisible"
+          :class="[ns.bem('float-control')]"
+          tabindex="0"
+          role="button"
+          @click="toggleSourceVisible(false)"
+        >
+          <ElIcon :size="16">
+            <FoldIcon />
+          </ElIcon>
+          <span>{{ i18n.collapseCode }}</span>
+        </div>
+      </Transition>
+    </section>
   </div>
 </template>
 
 <style lang="scss">
-  html.dark .shiki,
-  html.dark .shiki span {
-    color: var(--shiki-dark) !important;
-    font-style: var(--shiki-dark-font-style) !important;
-    font-weight: var(--shiki-dark-font-weight) !important;
-    text-decoration: var(--shiki-dark-text-decoration) !important;
+.#{$epPrefix}__container {
+  div[class*='language-'] {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
-  .#{$epPrefix}__container>* {
+  .language-html {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+.#{$epPrefix}__container {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--vp-c-divider);
+  margin: 10px 0;
+
+  .#{$epPrefix}-preview,
+  .#{$epPrefix}-description,
+  .#{$epPrefix}-source {
+    width: 100%;
+  }
+}
+
+.#{$epPrefix}__container>.#{$epPrefix}-preview {
+  box-sizing: border-box;
+  padding: 20px 20px 30px 20px;
+  border-radius: 4px 4px 0 0;
+  ;
+
+  &>p {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.#{$epPrefix}__container>.#{$epPrefix}-description {
+  .el-divider {
+    --el-border-color: var(--vp-c-divider);
+  }
+  .el-divider__text {
+    background-color: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+  }
+
+  .#{$epPrefix}-description__content {
+    padding: 0 20px 20px 20px;
     font-size: 14px;
   }
 
-  .#{$epPrefix}__container {
-    div[class*='language-'] {
-      margin-top: 0;
-      margin-bottom: 0;
-      border-radius: 0;
-      background: var(--coot-demo-box-code-bg);
-    }
+  .#{$epPrefix}-description__split-line {
+    border-bottom: 1px dashed var(--vp-c-divider);
   }
 
-  .#{$epPrefix}__container {
+  .#{$epPrefix}-description__handle-btn-op-bar {
+    height: 40px;
     width: 100%;
-    border-radius: 4px;
-    border: 1px solid var(--coot-demo-box-border);
-    margin: 10px 0;
-
-    .#{$epPrefix}-preview,
-    .#{$epPrefix}-description,
-    .#{$epPrefix}-source {
-      width: 100%;
-    }
-  }
-
-  .#{$epPrefix}__container>.#{$epPrefix}-preview {
-    box-sizing: border-box;
-    padding: 20px 20px 30px 20px;
-    border-radius: 4px 4px 0 0;
-    ;
-
-    &>p {
-      margin: 0;
-      padding: 0;
-    }
-  }
-
-  .#{$epPrefix}__container>.#{$epPrefix}-description {
-    position: relative;
-
-    &:has(.#{$epPrefix}-description__title) {
-      border-top: 1px solid var(--coot-demo-box-border);
-    }
-
-    .#{$epPrefix}-description__title {
-      position: absolute;
-      top: -12px;
-      padding-inline: 8px;
-      background: var(--coot-demo-box-title-bg);
-      font-weight: 500;
-      margin-inline-start: 12px;
-      border-radius: 6px 6px 0 0;
-    }
-
-    .#{$epPrefix}-description__content {
-      padding: 20px 20px 8px;
-    }
-
-    .#{$epPrefix}-description__split-line {
-      border-bottom: 1px dashed var(--coot-demo-box-border);
-    }
-
-    .#{$epPrefix}-description__handle-btn {
-      height: 40px;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      column-gap: 16px;
-      padding: 8px;
-      color: var(--el-text-color-secondary, #909399);
-      font-size: 16px;
-
-      svg {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-      }
-
-      svg:hover {
-        color: var(--text-color, #303133);
-      }
-
-      svg:not(:last-of-type) {
-        margin-right: 8px;
-      }
-    }
-  }
-
-  .#{$epPrefix}__container>.#{$epPrefix}-source {
-    transition: all 0.4s ease-in-out;
-    overflow: hidden;
-    height: 0;
-
-    div[class*='language-'] {
-      margin-top: 0 !important;
-    }
-
-    .language-html {
-      margin: 0;
-      overflow-x: auto;
-
-      .shiki {
-        background-color: var(--vp-code-block-bg) !important;
-      }
-
-      code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          Liberation Mono, Courier New, monospace;
-        padding: 0 24px;
-      }
-    }
-  }
-
-  .#{$epPrefix}__container>.#{$epPrefix}-fold {
-    position: sticky;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    z-index: 10;
-    background-color: var(--vp-c-bg);
     display: flex;
-    justify-content: center;
     align-items: center;
-    line-height: 36px;
-    font-size: 12px;
-    column-gap: 4px;
+    justify-content: flex-end;
+    padding: 8px;
+    color: var(--el-text-color-secondary, #909399);
+    font-size: 16px;
+  }
+
+  .#{$epPrefix}-description__handle-btn {
+    margin: 0 8px;
     cursor: pointer;
-    border-top: 1px solid var(--coot-demo-box-border);
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
+    color: var(--text-color-lighter);
+    transition: .2s;
+  }
+}
+
+.#{$epPrefix}-float-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--vp-c-divider);
+  height: 44px;
+  box-sizing: border-box;
+  background-color: var(--bg-color, #fff);
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  margin-top: -1px;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  position: sticky;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  span {
+    font-size: 14px;
+    margin-left: 10px;
   }
 
-  .#{$epPrefix}-lang-tabs,
-  .#{$epPrefix}-file-tabs {
-    line-height: 36px;
-    display: flex;
-    justify-content: center;
-    column-gap: 16px;
-    overflow-x: auto;
-
-    .#{$epPrefix}-tab {
-      cursor: pointer;
-    }
-
-    .#{$epPrefix}-active-tab {
-      color: #1677ff;
-      font-weight: 500;
-    }
+  &:hover {
+    color: var(--vp-brand-1);
   }
+}
 
-  .#{$epPrefix}-lang-tabs {
-    border-bottom: 1px dashed var(--coot-demo-box-border);
+.#{$epPrefix}-lang-tabs,
+.#{$epPrefix}-file-tabs {
+  padding: 4px 0;
+  display: flex;
+  justify-content: center;
+  .el-radio__input {
+    display: none;
   }
+}
 
-  .#{$epPrefix}-file-tabs {
-    border-top: 1px dashed var(--coot-demo-box-border);
-  }
+.#{$epPrefix}-lang-tabs {
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.#{$epPrefix}-file-tabs {
+  border-top: 1px solid var(--vp-c-divider);
+}
 </style>

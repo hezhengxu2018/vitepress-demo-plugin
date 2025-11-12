@@ -14,7 +14,6 @@ import { useCodeCopy } from '../utils/copy';
 import { genHtmlCode } from '../utils/template';
 import { ComponentType } from '@/constant/type';
 import { Platform } from '@/markdown/preview';
-import { codeToHtml } from 'shiki';
 import { initI18nData, observeI18n, unobserveI18n } from '@/locales/i18n';
 
 export interface VitepressDemoBoxProps {
@@ -36,6 +35,7 @@ export interface VitepressDemoBoxProps {
   codeplayer?: string;
   scope?: string;
   files: string;
+  codeHighlights?: string;
   lightTheme?: string;
   darkTheme?: string;
   theme?: string;
@@ -63,16 +63,40 @@ export function useDemoBox(
     return JSON.parse(decodeURIComponent(props.codeplayer || '{}'));
   });
 
+  const parsedFiles = computed<
+    Record<string, Record<string, { code: string; filename: string; html?: string }>>
+  >(() => {
+    try {
+      return JSON.parse(decodeURIComponent(props.files || '{}'));
+    } catch (error) {
+      console.error(error);
+      return {};
+    }
+  });
+
   const activeFile = ref<string>('');
   const currentFiles = computed<
-    Record<string, { code: string; filename: string }>
+    Record<string, { code: string; filename: string; html?: string }>
   >(() => {
-    const files = JSON.parse(decodeURIComponent(props.files || '{}'));
-    const result = files[type.value];
-    if (result && !result[activeFile.value]) {
+    const result = parsedFiles.value?.[type.value] || {};
+    if (Object.keys(result).length && !result[activeFile.value]) {
       activeFile.value = Object.keys(result)?.[0] || '';
+    } else if (!Object.keys(result).length) {
+      activeFile.value = '';
     }
     return result;
+  });
+
+  const parsedCodeHighlights = computed<Record<string, string>>(() => {
+    if (!props.codeHighlights) {
+      return {};
+    }
+    try {
+      return JSON.parse(decodeURIComponent(props.codeHighlights));
+    } catch (error) {
+      console.error(error);
+      return {};
+    }
   });
 
   const tabOrders = computed(() => {
@@ -91,10 +115,6 @@ export function useDemoBox(
       setInjectType(_type);
     }
   }
-  const fileType = computed(() => {
-    return type.value === 'react' ? 'tsx' : type.value;
-  });
-
   const { isCodeFold, setCodeFold } = useCodeFold();
   const { clickCopy } = useCodeCopy();
 
@@ -105,22 +125,21 @@ export function useDemoBox(
     return props[`${type.value}Code` as keyof VitepressDemoBoxProps];
   });
 
+  const currentCodeHtml = computed(() => {
+    if (currentFiles.value && currentFiles.value[activeFile.value]) {
+      return currentFiles.value[activeFile.value].html || '';
+    }
+    return parsedCodeHighlights.value?.[type.value] || '';
+  });
+
   const displayCode = ref('');
-  watchEffect(async () => {
-    await updateDisplayCode();
+  watchEffect(() => {
+    updateDisplayCode();
     updateCodeBlockHeight();
   });
 
-  async function updateDisplayCode() {
-    displayCode.value = await codeToHtml(currentCode.value || '', {
-      lang:
-        currentFiles.value[activeFile.value]?.filename.split('.').pop() ||
-        fileType.value,
-      themes: {
-        dark: props.darkTheme || 'github-dark',
-        light: props.lightTheme || 'github-light',
-      },
-    });
+  function updateDisplayCode() {
+    displayCode.value = currentCodeHtml.value || '';
   }
 
   function updateCodeBlockHeight() {
@@ -137,8 +156,13 @@ export function useDemoBox(
   }
 
   const tabs = computed<ComponentType[]>(() => {
+    const files = parsedFiles.value || {};
     return [ComponentType.VUE, ComponentType.REACT, ComponentType.HTML]
-      .filter((item) => props[`${item}Code` as keyof VitepressDemoBoxProps])
+      .filter((item) => {
+        const hasInlineCode = !!props[`${item}Code` as keyof VitepressDemoBoxProps];
+        const hasExtraFiles = Object.keys(files[item] || {}).length > 0;
+        return hasInlineCode || hasExtraFiles;
+      })
       .sort((a: string, b: string) => {
         return tabOrders.value.indexOf(a) - tabOrders.value.indexOf(b);
       });
@@ -327,21 +351,6 @@ export function useDemoBox(
 
   const sourceRef = ref<HTMLElement | null>(null);
   const sourceContentRef = ref<HTMLElement | null>(null);
-  watch(
-    () => isCodeFold.value,
-    (val) => {
-      nextTick(async () => {
-        if (sourceRef.value) {
-          if (val) {
-            sourceRef.value.style.height = '0';
-          } else {
-            await updateDisplayCode();
-            updateCodeBlockHeight();
-          }
-        }
-      });
-    }
-  );
 
   function initI18n(locale?: string) {
     if (locale) {
@@ -376,7 +385,6 @@ export function useDemoBox(
     currentFiles,
     tabOrders,
     type,
-    fileType,
     tabs,
     isCodeFold,
     setCodeFold,

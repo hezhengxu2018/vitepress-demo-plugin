@@ -158,7 +158,8 @@ export default defineConfig({
               },
             },
           ],
-        }
+        },
+        wrapperComponentName: 'vitepress-ep-demo-box'
       });
     },
   },

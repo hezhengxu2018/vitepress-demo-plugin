@@ -17,9 +17,9 @@ export const CN: LocaleText = {
   openInStackblitz: '在 Stackblitz 中打开',
   openInCodeSandbox: '在 Codesandbox 中打开',
   openInGithub: '在 GitHub 中打开',
-  openInGitlab: '在 GitLub 中打开',
-  collapseCode: '收起代码',
-  expandCode: '展开代码',
+  openInGitlab: '在 GitLab 中打开',
+  collapseCode: '查看源码',
+  expandCode: '查看源码',
   copyCode: '复制代码',
   copySuccess: '已将代码复制至剪切板！',
 };
